@@ -11,9 +11,25 @@ const fs = require('fs');
 const bodyparser = require('body-parser');
 const db = require('./db/bins.js');
 
+const loginRouter = express.Router();
+const userController = require('./controllers/userController');
+
+
 app.use(bodyparser.json());
 app.use('/admin', adminRouter);
 app.use('/bin', binRouter);
+app.use('/login', loginRouter);
+
+loginRouter.use(express.static('build/login'));
+
+// loginRouter.get('/login', (req, res) => {
+//   res.sendfile(path.resolve(__dirname, 'build/login/index.html'));
+// }); 
+
+//function below is for users on the login page to create an account if they dont have one currently
+app.post('/createUser', userController.createUser);
+
+
 
 adminRouter.use(express.static('build/admin'));
 
@@ -65,7 +81,7 @@ adminRouter.delete('/deleteBin', (req, res) => {
 
 
 binRouter.get('/:name/getContent', (req, res) => {
-
+  // console.log('user is trying to access a bin');
 });
 
 app.get('/webworker/:name', (req, res) => {
@@ -78,11 +94,30 @@ app.get('/webworker/:name', (req, res) => {
 });
 
 binRouter.get('/:name', (req, res, next) => {
-  if (req.params.name.split('.')[req.params.name.split('.').length - 1] === 'js' || req.params.name.split('.')[req.params.name.split('.').length - 1] === 'map' || req.params.name.split('.')[req.params.name.split('.').length - 1] === 'css') {
+  console.log('user is trying to access the bin!');
+
+  //this is where you put the routing for the bins!
+  console.log(req.params.name);
+
+
+
+
+
+  if (req.params.name.split('.')[req.params.name.split('.').length - 1] === 'js'  || 
+      req.params.name.split('.')[req.params.name.split('.').length - 1] === 'map' ||
+      req.params.name.split('.')[req.params.name.split('.').length - 1] === 'css') {
+
     return next('route');
   }
-  if (db.findOne(req.params.name)) {
-    res.sendFile(path.resolve(__dirname, '../build/bin/index.html'));
+
+  //they're looking for the actual bin data, instead of peripheral data about the bin, which comes second.
+  let foundDB = db.findOne(req.params.name)
+  if (foundDB) {
+    if(/*IF FOUNDDB USERS INCLUDES THE USER (which you get from the session cookie in their browser) */ true){
+      res.sendFile(path.resolve(__dirname, '../build/bin/index.html'));
+    } else {
+      //res.sendStatus UNAUTHORIZED FOR THIS BIN!!!!!!!!!!
+    }
   } else {
     res.sendStatus(404).json({ error: 'This bin does not exist!!!' });
   }
